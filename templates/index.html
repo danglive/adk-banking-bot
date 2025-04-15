@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Banking Bot</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .chat-container { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; height: 80vh; }
+        .chat-header { background-color: #0066cc; color: white; padding: 10px; text-align: center; }
+        .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px; border-radius: 18px; max-width: 70%; }
+        .user { align-self: flex-end; background-color: #0084ff; color: white; }
+        .bot { align-self: flex-start; background-color: #e9e9eb; color: black; }
+        .input-area { display: flex; padding: 10px; border-top: 1px solid #ddd; }
+        #message-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        #send-button { background-color: #0066cc; color: white; border: none; padding: 10px 15px; margin-left: 10px; border-radius: 4px; cursor: pointer; }
+        .session-info { font-size: 0.8em; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h2>Banking Assistant</h2>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="Type your message here..." />
+            <button id="send-button">Send</button>
+        </div>
+    </div>
+    <div class="session-info">
+        User ID: <span id="user-id">{{ user_id }}</span> | 
+        Session ID: <span id="session-id">{{ session_id }}</span>
+    </div>
+
+    <script>
+        const userId = "{{ user_id }}";
+        const sessionId = "{{ session_id }}";
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        let ws;
+        
+        // Add welcome message
+        const welcomeMsg = "{{ welcome_message }}";
+        addBotMessage(welcomeMsg);
+        
+        // Initialize WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket(`ws://${window.location.host}/ws/${userId}/${sessionId}`);
+            
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'response') {
+                    addBotMessage(data.content);
+                } else if (data.type === 'error') {
+                    addBotMessage('Error: ' + data.content);
+                } else if (data.type === 'welcome') {
+                    // Already added welcome message
+                }
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                // Try to reconnect after a delay
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+        
+        // Send message
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
+            
+            addUserMessage(text);
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ message: text }));
+            } else {
+                // Fallback to REST API if WebSocket isn't connected
+                fetch(`${window.location.origin}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, user_id: userId, session_id: sessionId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    addBotMessage(data.response_text);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    addBotMessage('Sorry, there was an error processing your request.');
+                });
+            }
+            
+            messageInput.value = '';
+        }
+        
+        // Add a user message to the chat
+        function addUserMessage(text) {
+            const message = document.createElement('div');
+            message.classList.add('message', 'user');
+            message.textContent = text;
+            messagesContainer.appendChild(message);
+            scrollToBottom();
+        }
+        
+        // Add a bot message to the chat
+        function addBotMessage(text) {
+            const message = document.createElement('div');
+            message.classList.add('message', 'bot');
+            message.textContent = text;
+            messagesContainer.appendChild(message);
+            scrollToBottom();
+        }
+        
+        // Scroll to the bottom of the messages container
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+        // Event listeners
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Connect WebSocket when the page loads
+        connectWebSocket();
+    </script>
+</body>
+</html>
+            

@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "adk-banking-bot"
+version = "0.1.0"
+description = "AI-based banking bot using ADK"
+authors = ["vantuandang1990@gmail.com"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiohttp = "^3.11.16"
+fastapi = "^0.115.12"
+httpx = "^0.28.1"
+openai = "^1.74.0"
+pandas = "^2.2.3"
+sqlalchemy = "^2.0.40"
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+uvicorn = "^0.34.1"
+google-cloud-storage = "^2.19.0"
+google-auth = "^2.39.0"
+pydantic = "^2.11.3"
+aiohappyeyeballs = "^2.6.1"
+litellm = "^1.66.1"
+requests = "^2.32.3"
+matplotlib = "^3.10.1"
+tqdm = "^4.67.1"
+jupyterlab = "^4.2.4"
+python-dotenv = "^1.1.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.1.1"
+black = "^23.3.0"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
